@@ -18,7 +18,7 @@ const api = new TSGhostContentAPI(
 
 // mirrors the getPosts(count) frontend function. 
 // gets [count] most recent posts from our ghost webserver, without pagination.
-router.get('/api/posts/:count', (request: Request, response: Response) => {
+router.get('/api/posts/browse/:count', (request: Request, response: Response) => {
 
     let count: number = parseInt(request.params.count);
 
@@ -39,13 +39,12 @@ router.get('/api/posts/:count', (request: Request, response: Response) => {
             response.sendStatus(500);
         })
 
-
 })
 
 
 // mirrors the getPostsPaginated(count, page) frontend function. 
 // gets [count] most recent posts from our ghost webserver, starting with offset determinted by [page] number.
-router.get('/api/posts/:count/:page', (request: Request, response: Response) => {
+router.get('/api/posts/browse/:count/:page', (request: Request, response: Response) => {
 
     let options = {
         limit: parseInt(request.params.count),
@@ -68,6 +67,36 @@ router.get('/api/posts/:count/:page', (request: Request, response: Response) => 
             console.log(error);
             response.sendStatus(500);
         })
+})
+
+
+// mirrors the getPostBySlug(slug) frontend function. 
+// gets a single post matching its unique [slug] identifier
+router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
+
+    api.posts  
+        .read({ slug: request.params.slug })
+        .fields({
+            slug: true, 
+            id: true, 
+            title: true, 
+            html: true, 
+            custom_excerpt: true, 
+            feature_image: true
+        })
+        .fetch()
+        .then((result) => {
+            if (result.success) {
+                response.send({ posts: result.data });
+            } else {
+                response.sendStatus(404);
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+            response.sendStatus(500);
+        })
+
 })
 
 module.exports = router;
