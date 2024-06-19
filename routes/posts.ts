@@ -22,14 +22,14 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
 
     let count: number = parseInt(request.params.count);
 
-    api.posts  
+    api.posts
         .browse({ limit: count })
         .include({ tags: true })
         .fetch()
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
-                response.send({posts: filteredResult})
+                response.send({ posts: filteredResult })
             } else {
                 response.sendStatus(404);
             }
@@ -51,14 +51,14 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
         page: parseInt(request.params.page)
     }
 
-    api.posts  
+    api.posts
         .browse(options)
         .include({ tags: true })
         .fetch()
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
-                response.send({posts: filteredResult, meta: result.meta.pagination})
+                response.send({ posts: filteredResult, meta: result.meta.pagination })
             } else {
                 response.sendStatus(404);
             }
@@ -70,18 +70,71 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
 })
 
 
+// mirrors the getPostsBySearch(count, page, search, tags) frontend function. 
+// gets [count] most recent posts matching query. depending on provided values [search] and [tags], creates filter which
+// posts must match. call is paginated according to provided [page] value. 
+router.get('/api/posts/search/:count/:page', (request: Request, response: Response) => {
+
+    let apiCall;
+
+    // workaround for annoying quirks in typescript ghost module: define our browse call here so we can have variable filter values
+    if (request.query.tags) {
+        if (request.query.search) // tags and search query provided
+            apiCall = api.posts.browse({
+                    limit: parseInt(request.params.count),
+                    page: parseInt(request.params.page),     //  filter: p and (q or r) = (p and q) or (p and r)
+                    filter: `tags:[${request.query.tags}]+custom_excerpt:~'${request.query.search}',tags:[${request.query.tags}]+title:~'${request.query.search}'`
+            })
+        else  // tag query, but no search query
+            apiCall = api.posts.browse({
+                limit: parseInt(request.params.count),
+                page: parseInt(request.params.page),
+                filter: `tags:[${request.query.tags}]`
+            })
+    } else {
+        if (request.query.search) // no tag query, but search query provided
+            apiCall = api.posts.browse({
+                limit: parseInt(request.params.count),
+                page: parseInt(request.params.page),
+                filter: `custom_excerpt:~'${request.query.search}',title:~'${request.query.search}'`
+            })
+        else  // neither tag nor search query
+            apiCall = api.posts.browse({ 
+                limit: parseInt(request.params.count),
+                page: parseInt(request.params.page),
+            })
+    }
+
+    apiCall.include({ tags: true })
+        .fetch()
+        .then((result) => {
+            if (result.success) {
+                let filteredResult = result.data.map(selectPostFields);
+                response.send({ posts: filteredResult, meta: result.meta.pagination })
+            } else {
+                response.sendStatus(404);
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+            response.sendStatus(500);
+        })
+
+})
+
+
 // mirrors the getPostBySlug(slug) frontend function. 
 // gets a single post matching its unique [slug] identifier
 router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
 
-    api.posts  
+    api.posts
         .read({ slug: request.params.slug })
         .fields({
-            slug: true, 
-            id: true, 
-            title: true, 
-            html: true, 
-            custom_excerpt: true, 
+            slug: true,
+            id: true,
+            title: true,
+            html: true,
+            custom_excerpt: true,
             feature_image: true
         })
         .fetch()
