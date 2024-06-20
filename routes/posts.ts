@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { TSGhostContentAPI, Post } from "@ts-ghost/content-api";
 import { selectPostFields } from '../util';
+import { request } from 'http';
 
 require('dotenv').config()
 const express = require('express')
@@ -150,6 +151,35 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
             response.sendStatus(500);
         })
 
+})
+
+
+// mirrors the getTags() frontend function.
+// gets a list of all tags. will not return tags without any associated post
+router.get('/api/tags', (request: Request, response: Response) => {
+
+    api.tags
+        .browse({limit: 'all'})
+        .fields({
+            id: true,
+            slug: true,
+            name: true,
+            description: true,
+            accent_color: true
+        })
+        .fetch()
+        .then((result) => {
+            if (result.success) {
+                response.send({ tags: result.data })
+            } else {
+                response.sendStatus(404);
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+            response.sendStatus(500)
+        })
+ 
 })
 
 module.exports = router;
