@@ -136,7 +136,9 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
             title: true,
             html: true,
             custom_excerpt: true,
-            feature_image: true
+            feature_image: true,
+            feature_image_alt: true,
+            published_at: true
         })
         .fetch()
         .then((result) => {

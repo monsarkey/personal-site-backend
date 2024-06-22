@@ -6,8 +6,8 @@ export function selectPostFields(post: any) {
 
     post.tags = post.tags.map(selectTagFields)
 
-    const {slug, id, title, custom_excerpt, feature_image, tags} = post;
-    return {slug, id, title, custom_excerpt, feature_image, tags};
+    const {slug, id, title, custom_excerpt, feature_image, feature_image_alt, published_at, tags} = post;
+    return {slug, id, title, custom_excerpt, feature_image, feature_image_alt, published_at, tags};
 }
 
 function selectTagFields(tag: Tag)  {
