@@ -143,7 +143,7 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
         .fetch()
         .then((result) => {
             if (result.success) {
-                response.send({ posts: result.data });
+                response.send({ post: result.data });
             } else {
                 response.sendStatus(404);
             }
