@@ -4,6 +4,7 @@ import { selectPostFields } from '../util';
 import { request } from 'http';
 
 require('dotenv').config()
+const crypto = require('crypto')
 const express = require('express')
 
 
@@ -15,6 +16,27 @@ const api = new TSGhostContentAPI(
     "v5.84"
 );
 
+
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+
+router.post('/api/posts/update', (request: Request, response: Response) => {
+
+    if(!request.headers['x-ghost-signature'] || typeof request.headers['x-ghost-signature'] != "string") {
+        return response.sendStatus(403); //todo: find correct status code for this
+    } 
+
+    // if formatted inproperly, key will be set to empty string
+    let key: string = request.headers['x-ghost-signature'].split(', ')[0].split('=')[1] || "";
+    let secret = crypto.createHmac('sha256', WEBHOOK_SECRET).update(JSON.stringify(request.body)).digest('hex'); 
+
+    if (secret != key) {
+        return response.sendStatus(403); //todo: find correct status code for this
+    }
+    
+    // IF AUTHENTICATED, UPDATE CACHE HERE: 
+    return response.sendStatus(200);
+    
+})
 
 
 // mirrors the getPosts(count) frontend function. 
@@ -122,7 +144,6 @@ router.get('/api/posts/search/:count/:page', (request: Request, response: Respon
         })
 
 })
-
 
 // mirrors the getPostBySlug(slug) frontend function. 
 // gets a single post matching its unique [slug] identifier
