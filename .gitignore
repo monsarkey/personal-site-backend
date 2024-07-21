@@ -1,6 +1,8 @@
 
 # **** auto-generated node .gitignore **** 
 
+notes.txt
+
 # Logs
 logs
 *.log
