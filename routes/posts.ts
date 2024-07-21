@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { TSGhostContentAPI, Post } from "@ts-ghost/content-api";
 import { selectPostFields } from '../util';
+import { PostCache } from '../cache';
 import { request } from 'http';
 
 require('dotenv').config()
@@ -15,6 +16,7 @@ const api = new TSGhostContentAPI(
     "v5.84"
 );
 
+const cache = new PostCache(api);
 
 
 // mirrors the getPosts(count) frontend function. 
