@@ -2,6 +2,7 @@
 # **** auto-generated node .gitignore **** 
 
 notes.txt
+.vscode/
 
 # Logs
 logs

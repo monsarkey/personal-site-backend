@@ -9,7 +9,7 @@ const PORT: number = parseInt((process.env.PORT) ? process.env.PORT : '0');
 
 const app = express();
 const posts = require('./routes/posts');
-
+const bodyParse = require('body-parser');
 
 // TODO: FIGURE OUT CORS STUFF LATER, THIS IS PLACEHOLDER CODE THAT FUNCTIONS
 const allow = [process.env.BASE_URL]
@@ -29,12 +29,15 @@ if (process.env.USE_CORS === 'y') {
     app.use(cors())
 }
 
+
+app.use(bodyParse.json());
+
 // setting up post routes defined in './routes/posts.ts'
-app.use(posts)
+app.use(posts);
 
 
 app.get('/', (request: Request, response: Response) => {
-    response.send('unrecognized endpoint')
+    response.send('unrecognized endpoint');
 })
 
 app.listen(PORT, () => {
