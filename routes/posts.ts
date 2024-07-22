@@ -48,6 +48,17 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
 
     let count: number = parseInt(request.params.count);
 
+    if ((Number.isNaN(count) || count < 0)) {
+        return response.sendStatus(400) // bad request
+    }
+
+    // first try to get from cache
+    let cacheResponse = cache.get(request.url)
+
+    if (cacheResponse.success) {
+        return response.send(cacheResponse.data);
+    }
+
     api.posts
         .browse({ limit: count })
         .include({ tags: true })
@@ -55,6 +66,7 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
+                cache.set(request.url, { data: { posts: filteredResult } })
                 return response.send({ posts: filteredResult })
             } else {
                 return response.sendStatus(404);
@@ -72,11 +84,26 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
 // gets [count] most recent posts from our ghost webserver, starting with offset determinted by [page] number.
 router.get('/api/posts/browse/:count/:page', (request: Request, response: Response) => {
 
-    let options = {
-        limit: parseInt(request.params.count),
-        page: parseInt(request.params.page)
+    let count = parseInt(request.params.count);
+    let page = parseInt(request.params.page);
+
+    if ((Number.isNaN(count) || count < 0) || (Number.isNaN(page) || page < 0)) {
+        return response.sendStatus(400) // bad request
     }
 
+    // first try to get from cache
+    let cacheResponse = cache.get(request.url)
+
+    if (cacheResponse.success) {
+        return response.send(cacheResponse.data);
+    }
+
+    let options = {
+        limit: count,
+        page: page
+    }
+
+    // if unsuccessful, get from api.
     api.posts
         .browse(options)
         .include({ tags: true })
@@ -84,6 +111,7 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
+                cache.set(request.url, { data: { posts: filteredResult, meta: result.meta.pagination } })
                 return response.send({ posts: filteredResult, meta: result.meta.pagination })
             } else {
                 return response.sendStatus(404);
@@ -93,6 +121,7 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
             console.log(error);
             return response.sendStatus(500);
         })
+
 })
 
 
@@ -173,6 +202,12 @@ router.get('/api/posts/search/:count/:page', (request: Request, response: Respon
 // gets a single post matching its unique [slug] identifier
 router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
 
+    // try to get from cache
+    let cacheResponse = cache.get(request.url);
+
+    if (cacheResponse.success)
+        return response.send(cacheResponse.data);
+
     api.posts
         .read({ slug: request.params.slug })
         .fields({
@@ -188,6 +223,7 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
         .fetch()
         .then((result) => {
             if (result.success) {
+                cache.set(request.url, { data: { post: result.data } })
                 return response.send({ post: result.data });
             } else {
                 return response.sendStatus(404);
@@ -205,6 +241,13 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
 // gets a list of all tags. will not return tags without any associated post
 router.get('/api/tags', (request: Request, response: Response) => {
 
+    // try to get from cache
+    let cacheResponse = cache.get(request.url);
+
+    if (cacheResponse.success)
+        return response.send(cacheResponse.data);
+
+
     api.tags
         .browse({limit: 'all'})
         .fields({
@@ -217,6 +260,7 @@ router.get('/api/tags', (request: Request, response: Response) => {
         .fetch()
         .then((result) => {
             if (result.success) {
+                cache.set(request.url, { data: { tags: result.data } })
                 return response.send({ tags: result.data })
             } else {
                 return response.sendStatus(404);
