@@ -18,3 +18,18 @@ export interface Post {
     html?: string,
     tags?: Tag[]
 } 
+
+export interface PostMetadata {
+    pages: number,
+    page: number,
+    limit: number,
+    total: number,
+    prev: number | null,
+    next: number | null
+}
+
+export interface PostResponse {
+    posts: Post[],
+    meta?: PostMetadata
+}
+
