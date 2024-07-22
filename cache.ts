@@ -22,7 +22,7 @@ export class PostCache {
 
     this._cache = new Map<string, CacheItem>();
     this._getPosts();
-    
+
   }
 
   private _getPosts(): void  {
@@ -48,7 +48,8 @@ export class PostCache {
   }
 
   public refresh() {
-    // this._cache = {};
+    console.log('refreshing cache...')
+    this._cache = new Map<string, CacheItem>();
     this._getPosts();
   }
 

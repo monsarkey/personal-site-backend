@@ -22,10 +22,11 @@ const cache = new PostCache(api);
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
+// receives authenticated webhook from Ghost client. On authentication, resets the cache.
 router.post('/api/posts/update', (request: Request, response: Response) => {
 
     if(!request.headers['x-ghost-signature'] || typeof request.headers['x-ghost-signature'] != "string") {
-        return response.sendStatus(403); //todo: find correct status code for this
+        return response.sendStatus(401); 
     } 
 
     // if formatted inproperly, key will be set to empty string
@@ -33,10 +34,11 @@ router.post('/api/posts/update', (request: Request, response: Response) => {
     let secret = crypto.createHmac('sha256', WEBHOOK_SECRET).update(JSON.stringify(request.body)).digest('hex'); 
 
     if (secret != key) {
-        return response.sendStatus(403); //todo: find correct status code for this
+        return response.sendStatus(401); 
     }
     
     // IF AUTHENTICATED, UPDATE CACHE HERE: 
+    cache.refresh();
     return response.sendStatus(200);
     
 })
