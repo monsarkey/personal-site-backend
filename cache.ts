@@ -1,7 +1,7 @@
 
 import { TSGhostContentAPI } from '@ts-ghost/content-api';
 import { Request, Response } from 'express'
-import { Post, PostMetadata, PostResponse } from './types';
+import { Post, PostMetadata, PostResponse, CacheResponse, CacheItem } from './types';
 import { selectPostFields } from './util';
 import { match } from 'assert';
 
@@ -9,7 +9,7 @@ import { match } from 'assert';
 export class PostCache {
 
   private _postList: Post[] = [];
-  private _cache: Map<string, any>;
+  private _cache: Map<string, CacheItem>;
   private _api: TSGhostContentAPI;
 
   private _retry_num: number;
@@ -20,8 +20,9 @@ export class PostCache {
     this._api = api;
     this._retry_num = retry_num;
 
-    this._cache = new Map<string, any>();
+    this._cache = new Map<string, CacheItem>();
     this._getPosts();
+    
   }
 
   private _getPosts(): void  {
@@ -77,7 +78,7 @@ export class PostCache {
       if(search) {       
         search = search.toLowerCase();
 
-        if ((post.title.toLowerCase().includes(search) || post.custom_excerpt.toLowerCase().includes(search))) {
+        if ((post.title.toLowerCase().includes(search) || post.custom_excerpt?.toLowerCase().includes(search))) {
           hasQuery = true;
         }
       }
@@ -109,11 +110,20 @@ export class PostCache {
 
   }
 
-  public get(request: Request) {
+  public get(requestUrl: string): CacheResponse {
+
+    let item = this._cache.get(requestUrl);
+
+    if (item) 
+      return { "success": true, "data": item }
+    else 
+      return { "success": false }
 
   }
 
-  public set(request: Request): void {
+  public set(requestUrl: string, data: CacheItem): void {
+
+    this._cache.set(requestUrl, data);
 
   }
 }
