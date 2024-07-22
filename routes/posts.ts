@@ -22,10 +22,11 @@ const cache = new PostCache(api);
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
+// receives authenticated webhook from Ghost client. On authentication, resets the cache.
 router.post('/api/posts/update', (request: Request, response: Response) => {
 
     if(!request.headers['x-ghost-signature'] || typeof request.headers['x-ghost-signature'] != "string") {
-        return response.sendStatus(403); //todo: find correct status code for this
+        return response.sendStatus(401); 
     } 
 
     // if formatted inproperly, key will be set to empty string
@@ -33,10 +34,11 @@ router.post('/api/posts/update', (request: Request, response: Response) => {
     let secret = crypto.createHmac('sha256', WEBHOOK_SECRET).update(JSON.stringify(request.body)).digest('hex'); 
 
     if (secret != key) {
-        return response.sendStatus(403); //todo: find correct status code for this
+        return response.sendStatus(401); 
     }
     
     // IF AUTHENTICATED, UPDATE CACHE HERE: 
+    cache.refresh();
     return response.sendStatus(200);
     
 })
@@ -56,7 +58,7 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
     let cacheResponse = cache.get(request.url)
 
     if (cacheResponse.success) {
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
     }
 
     api.posts
@@ -95,7 +97,7 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
     let cacheResponse = cache.get(request.url)
 
     if (cacheResponse.success) {
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
     }
 
     let options = {
@@ -206,7 +208,7 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
     let cacheResponse = cache.get(request.url);
 
     if (cacheResponse.success)
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
 
     api.posts
         .read({ slug: request.params.slug })
@@ -245,7 +247,7 @@ router.get('/api/tags', (request: Request, response: Response) => {
     let cacheResponse = cache.get(request.url);
 
     if (cacheResponse.success)
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
 
 
     api.tags
