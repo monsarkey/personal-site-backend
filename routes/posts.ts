@@ -1,8 +1,9 @@
 import { Request, Response } from 'express'
 import { TSGhostContentAPI, Post } from "@ts-ghost/content-api";
+import { PostResponse } from '../types';
 import { selectPostFields } from '../util';
 import { PostCache } from '../cache';
-import { request } from 'http';
+
 
 require('dotenv').config()
 const crypto = require('crypto')
@@ -54,14 +55,14 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
-                response.send({ posts: filteredResult })
+                return response.send({ posts: filteredResult })
             } else {
-                response.sendStatus(404);
+                return response.sendStatus(404);
             }
         })
         .catch((error) => {
             console.log(error);
-            response.sendStatus(500);
+            return response.sendStatus(500);
         })
 
 })
@@ -83,14 +84,14 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
-                response.send({ posts: filteredResult, meta: result.meta.pagination })
+                return response.send({ posts: filteredResult, meta: result.meta.pagination })
             } else {
-                response.sendStatus(404);
+                return response.sendStatus(404);
             }
         })
         .catch((error) => {
             console.log(error);
-            response.sendStatus(500);
+            return response.sendStatus(500);
         })
 })
 
@@ -101,32 +102,53 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
 router.get('/api/posts/search/:count/:page', (request: Request, response: Response) => {
 
     let apiCall;
+    let cachedResponse: PostResponse | null = null;
+
+    let count = parseInt(request.params.count);
+    let page = parseInt(request.params.page);
+
+    let searchStr: string = typeof request.query.search === "undefined" ? "" : String(request.query.search);
+    let searchTags = !request.query.tags ? [] : request.query.tags;
+
+    if ((Number.isNaN(count) || count < 0) || (Number.isNaN(page) || page < 0)) {
+        return response.sendStatus(400) // bad request
+    }
+
+    // try doing search from cached data, if available.
+    if (Array.isArray(searchTags)) {
+        cachedResponse = cache.search(count, page, searchStr, searchTags as string[]);
+        if (cachedResponse !== null) {
+            return response.send(cachedResponse);
+        }
+    }
+    else
+        return response.sendStatus(400) // bad request
 
     // workaround for annoying quirks in typescript ghost module: define our browse call here so we can have variable filter values
     if (request.query.tags) {
         if (request.query.search) // tags and search query provided
             apiCall = api.posts.browse({
-                    limit: parseInt(request.params.count),
-                    page: parseInt(request.params.page),     //  filter: p and (q or r) = (p and q) or (p and r)
-                    filter: `tags:[${request.query.tags}]+custom_excerpt:~'${request.query.search}',tags:[${request.query.tags}]+title:~'${request.query.search}'`
+                limit: count,
+                page: page,     //  filter: p and (q or r) = (p and q) or (p and r)
+                filter: `tags:[${request.query.tags}]+custom_excerpt:~'${request.query.search}',tags:[${request.query.tags}]+title:~'${request.query.search}'`
             })
         else  // tag query, but no search query
             apiCall = api.posts.browse({
-                limit: parseInt(request.params.count),
-                page: parseInt(request.params.page),
+                limit: count,
+                page: page,
                 filter: `tags:[${request.query.tags}]`
             })
     } else {
         if (request.query.search) // no tag query, but search query provided
             apiCall = api.posts.browse({
-                limit: parseInt(request.params.count),
-                page: parseInt(request.params.page),
+                limit: count,
+                page: page,
                 filter: `custom_excerpt:~'${request.query.search}',title:~'${request.query.search}'`
             })
         else  // neither tag nor search query
             apiCall = api.posts.browse({ 
-                limit: parseInt(request.params.count),
-                page: parseInt(request.params.page),
+                limit: count,
+                page: page,
             })
     }
 
@@ -135,14 +157,14 @@ router.get('/api/posts/search/:count/:page', (request: Request, response: Respon
         .then((result) => {
             if (result.success) {
                 let filteredResult = result.data.map(selectPostFields);
-                response.send({ posts: filteredResult, meta: result.meta.pagination })
+                return response.send({ posts: filteredResult, meta: result.meta.pagination })
             } else {
-                response.sendStatus(404);
+                return response.sendStatus(404); // not found
             }
         })
         .catch((error) => {
             console.log(error);
-            response.sendStatus(500);
+            return response.sendStatus(500);
         })
 
 })
@@ -166,14 +188,14 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
         .fetch()
         .then((result) => {
             if (result.success) {
-                response.send({ post: result.data });
+                return response.send({ post: result.data });
             } else {
-                response.sendStatus(404);
+                return response.sendStatus(404);
             }
         })
         .catch((error) => {
             console.log(error);
-            response.sendStatus(500);
+            return response.sendStatus(500);
         })
 
 })
@@ -195,14 +217,14 @@ router.get('/api/tags', (request: Request, response: Response) => {
         .fetch()
         .then((result) => {
             if (result.success) {
-                response.send({ tags: result.data })
+                return response.send({ tags: result.data })
             } else {
-                response.sendStatus(404);
+                return response.sendStatus(404);
             }
         })
         .catch((error) => {
             console.log(error);
-            response.sendStatus(500)
+            return response.sendStatus(500)
         })
  
 })
