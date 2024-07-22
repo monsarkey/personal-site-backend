@@ -58,7 +58,7 @@ router.get('/api/posts/browse/:count', (request: Request, response: Response) =>
     let cacheResponse = cache.get(request.url)
 
     if (cacheResponse.success) {
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
     }
 
     api.posts
@@ -97,7 +97,7 @@ router.get('/api/posts/browse/:count/:page', (request: Request, response: Respon
     let cacheResponse = cache.get(request.url)
 
     if (cacheResponse.success) {
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
     }
 
     let options = {
@@ -208,7 +208,7 @@ router.get('/api/posts/read/:slug', (request: Request, response: Response) => {
     let cacheResponse = cache.get(request.url);
 
     if (cacheResponse.success)
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
 
     api.posts
         .read({ slug: request.params.slug })
@@ -247,7 +247,7 @@ router.get('/api/tags', (request: Request, response: Response) => {
     let cacheResponse = cache.get(request.url);
 
     if (cacheResponse.success)
-        return response.send(cacheResponse.data);
+        return response.send(cacheResponse.item?.data);
 
 
     api.tags

@@ -116,7 +116,7 @@ export class PostCache {
     let item = this._cache.get(requestUrl);
 
     if (item) 
-      return { "success": true, "data": item }
+      return { "success": true, "item": item }
     else 
       return { "success": false }
 

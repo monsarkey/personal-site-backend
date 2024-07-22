@@ -47,6 +47,6 @@ export interface CacheItem {
 
 export interface CacheResponse {
     success: boolean,
-    data?: CacheItem
+    item?: CacheItem
 }
 
