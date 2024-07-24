@@ -111,6 +111,12 @@ export class PostCache {
 
   }
 
+  public findPost(slug: string): Post | undefined {
+
+    return this._postList.find((post)=> post.slug === slug)
+
+  }
+
   public get(requestUrl: string): CacheResponse {
 
     let item = this._cache.get(requestUrl);
