@@ -4,11 +4,11 @@ import { PostResponse } from '../types';
 import { selectPostFields } from '../util';
 import { PostCache } from '../cache';
 
+import { FRONT_URL, DEFAULT_META, META } from '../constants';
 
-require('dotenv').config()
-const crypto = require('crypto')
-const express = require('express')
-
+require('dotenv').config();
+const crypto = require('crypto');
+const express = require('express');
 
 const router = express.Router();
 
@@ -273,6 +273,51 @@ router.get('/api/tags', (request: Request, response: Response) => {
             return response.sendStatus(500)
         })
  
+})
+
+
+router.get('/api/meta', (request: Request, response: Response) => {
+
+    let queryStr: string = typeof request.query.uri === "undefined" ? "" : String(request.query.uri);
+
+    // getting post metadata
+    if (queryStr.startsWith("/blog/")) {
+        const slug = queryStr.split('/')[2];
+        const post = cache.findPost(slug);
+        return post ? response.send({
+            "META_URL": `${FRONT_URL}${queryStr}`,
+            "META_TYPE": 'article',
+            "META_TITLE": post.title,
+            "META_DESC": post.custom_excerpt,
+            "META_IMG": post.feature_image
+        }) :
+        response.send({
+            "META_URL": `${FRONT_URL}${queryStr}`,
+            "META_TYPE": 'article',
+            "META_TITLE": DEFAULT_META.title,
+            "META_DESC": DEFAULT_META.desc,
+            "META_IMG": DEFAULT_META.img
+        })
+    } else {  // getting metadata for static pages
+        if (META[queryStr]) {
+            return response.send({
+                "META_URL": `${FRONT_URL}${queryStr}`,
+                "META_TYPE": 'website',
+                "META_TITLE": META[queryStr]?.title,
+                "META_DESC": META[queryStr]?.desc,
+                "META_IMG": META[queryStr]?.img,
+            })
+        } else {
+            return response.send({
+                "META_URL": `${FRONT_URL}${queryStr}`,
+                "META_TYPE": 'website',
+                "META_TITLE": DEFAULT_META.title,
+                "META_DESC": DEFAULT_META.desc,
+                "META_IMG": DEFAULT_META.img
+            })
+        }
+    }
+
 })
 
 module.exports = router;
